@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Super Boggle Online</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Login Screen */
+        .login-screen, .game-screen {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-screen {
+            max-width: 500px;
+            margin: 100px auto;
+            text-align: center;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Game Layout */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .player-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            background: #f0f0f0;
+            padding: 15px 30px;
+            border-radius: 15px;
+            color: #333;
+        }
+
+        .timer.warning {
+            color: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dice {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .dice:hover {
+            transform: scale(1.05);
+        }
+
+        .word-input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+
+        .submit-word {
+            width: auto;
+            padding: 15px 30px;
+        }
+
+        .words-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .my-words, .all-words {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .my-words h3, .all-words h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .word-tag {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .word-tag:hover {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+            margin-top: 10px;
+        }
+
+        .message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .dice { font-size: 20px; }
+            .timer { font-size: 32px; }
+            .words-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <h1>🎲 Super Boggle Online</h1>
+            <div class="subtitle">6x6 Board | SOWPODS Dictionary | 3 Minutes</div>
+            <select id="playerSelect">
+                <option value="">Loading players...</option>
+            </select>
+            <button onclick="login()">Start Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <div class="player-info" id="playerInfo"></div>
+                <div class="timer" id="timer">03:00</div>
+            </div>
+
+            <div class="board" id="board"></div>
+
+            <div class="word-input-area">
+                <input type="text" id="wordInput" placeholder="Type a word..." maxlength="20" autocomplete="off">
+                <button class="submit-word" onclick="submitWord()">Submit</button>
+            </div>
+
+            <div class="words-section">
+                <div class="my-words">
+                    <h3>Your Words</h3>
+                    <div class="word-list" id="myWords"></div>
+                    <div class="score">Score: <span id="myScore">0</span></div>
+                </div>
+                <div class="all-words">
+                    <h3>All Players' Words (Shared)</h3>
+                    <div class="word-list" id="allWords"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ CONFIGURATION ============
+        // REPLACE THIS WITH YOUR APPS SCRIPT URL
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/1nL2qpmWwN7P_bh1lDvY_gc_LZj9kWJ27UnOshnK47fqLr5gscUarSrHj/exec";
+        
+        // ============ GAME STATE ============
+        let currentPlayer = null;
+        let gameActive = false;
+        let timeLeft = 180; // 3 minutes in seconds
+        let timerInterval = null;
+        let myWords = [];
+        let allPlayerWords = new Map(); // word -> set of players who submitted it
+        let currentBoard = [];
+        let sowpodsSet = new Set(); // Will store valid words
+        
+        // ============ SOWPODS WORD LIST (Sample - you'll need full list) ============
+        // For production, download full SOWPODS from: https://raw.githubusercontent.com/joshwnj/sowpods/master/sowpods.txt
+        // I'm including common words as example, but you'll want the full list
+        const SAMPLE_WORDS = ["CAT", "DOG", "BAT", "RAT", "HAT", "MAT", "SAT", "FAT", "PAT", "BALL", "CALL", "FALL", "WALL", "TALL", "SMALL", "GAME", "NAME", "SAME", "CAME", "LAME", "TAME", "FRAME"];
+        
+        async function loadSowpods() {
+            // Try to load full SOWPODS from CDN
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/joshwnj/sowpods/master/sowpods.txt');
+                const text = await response.text();
+                const words = text.split('\n').map(w => w.trim().toUpperCase());
+                words.forEach(w => sowpodsSet.add(w));
+                console.log(`Loaded ${sowpodsSet.size} words from SOWPODS`);
+            } catch (error) {
+                console.warn("Could not load full SOWPODS, using sample words");
+                SAMPLE_WORDS.forEach(w => sowpodsSet.add(w));
+            }
+        }
+        
+        // ============ BOARD GENERATION ============
+        // Super Boggle 6x6 dice (standard Boggle dice expanded)
+        const DICE = [
+            'AAAFRS', 'AAEEEE', 'AAFIRS', 'ADENNN', 'AEEEEM', 'AEEGMU',
+            'AEGMNN', 'AFIRSY', 'BJKQXZ', 'CCNSTW', 'CEIILT', 'CEILPT',
+            'CEIPST', 'DDLNOR', 'DHHLOR', 'DHHNOT', 'DHLNOR', 'EIIITT',
+            'EMOTTT', 'ENSSSU', 'FIPRSY', 'GORRVW', 'HIPRRY', 'NOOTUW',
+            'OOOTTU', 'ABCDEF', 'GHIJKL', 'MNOPQR', 'STUVWX', 'YZAAAA',
+            'BBCCDD', 'EEFFGG', 'HHIIJJ', 'KKLLMM', 'NNOOPP', 'QQRRSSTT'
+        ];
+        
+        function generateBoard() {
+            const shuffledDice = [...DICE];
+            for (let i = shuffledDice.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledDice[i], shuffledDice[j]] = [shuffledDice[j], shuffledDice[i]];
+            }
+            
+            const board = [];
+            for (let i = 0; i < 36; i++) {
+                const die = shuffledDice[i];
+                const letter = die.charAt(Math.floor(Math.random() * die.length));
+                board.push(letter);
+            }
+            return board;
+        }
+        
+        // ============ WORD VALIDATION ============
+        function isValidWord(word) {
+            if (word.length < 4) return false;
+            return sowpodsSet.has(word);
+        }
+        
+        function calculateScore(word) {
+            const len = word.length;
+            if (len === 4) return 1;
+            if (len === 5) return 2;
+            if (len === 6) return 3;
+            if (len === 7) return 5;
+            if (len === 8) return 11;
+            if (len >= 9) return 11 + (len - 8) * 2;
+            return 0;
+        }
+        
+        // Simple prefix search for board (not full pathfinding - for demo)
+        // In production, implement proper Boggle DFS
+        function canFormWord(board, word) {
+            // Simplified check - for real game, implement proper Boggle algorithm
+            // This checks if all letters exist roughly (not perfect pathfinding)
+            const boardLetters = board.join('');
+            for (let char of word) {
+                if (!boardLetters.includes(char)) return false;
+            }
+            return true;
+        }
+        
+        // ============ PLAYER MANAGEMENT ============
+        async function loadPlayers() {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getPlayers' }),
+                    mode: 'no-cors' // Required for Apps Script
+                });
+                
+                // Due to no-cors, we need a different approach
+                // Using JSONP or modifying Apps Script to handle GET
+                console.log("Loading players via alternative method");
+                
+                // Fallback to sample players
+                const samplePlayers = ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5", 
+                                      "Player 6", "Player 7", "Player 8", "Player 9", "Player 10"];
+                populatePlayerSelect(samplePlayers);
+                
+            } catch (error) {
+                console.error("Error loading players:", error);
+                // Fallback players
+                const fallbackPlayers = ["Alice", "Bob", "Charlie", "David", "Emma", "Frank", "Grace", "Henry"];
+                populatePlayerSelect(fallbackPlayers);
+            }
+        }
+        
+        function populatePlayerSelect(players) {
+            const select = document.getElementById('playerSelect');
+            select.innerHTML = '<option value="">Select your name...</option>';
+            players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player;
+                option.textContent = player;
+                select.appendChild(option);
+            });
+        }
+        
+        async function updateScoreInSheet(playerName, score) {
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'updateScore', 
+                        playerName: playerName, 
+                        score: score 
+                    }),
+                    mode: 'no-cors'
+                });
+            } catch (error) {
+                console.error("Error updating score:", error);
+            }
+        }
+        
+        // ============ GAME MECHANICS ============
+        function startGame() {
+            gameActive = true;
+            myWords = [];
+            allPlayerWords.clear();
+            currentBoard = generateBoard();
+            timeLeft = 180;
+            
+            updateDisplay();
+            startTimer();
+            
+            document.getElementById('wordInput').disabled = false;
+            document.getElementById('wordInput').focus();
+        }
+        
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                if (!gameActive) return;
+                
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                } else if (timeLeft <= 10) {
+                    document.getElementById('timer').classList.add('warning');
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function submitWord() {
+            if (!gameActive) {
+                showMessage("Game not active!", "error");
+                return;
+            }
+            
+            const input = document.getElementById('wordInput');
+            let word = input.value.trim().toUpperCase();
+            
+            if (word.length === 0) return;
+            
+            // Validate
+            if (word.length < 4) {
+                showMessage("Words must be at least 4 letters!", "error");
+                input.value = "";
+                return;
+            }
+            
+            if (!isValidWord(word)) {
+                showMessage("Not a valid English word!", "error");
+                input.value = "";
+                return;
+            }
+            
+            if (!canFormWord(currentBoard, word)) {
+                showMessage("Cannot form this word on the board!", "error");
+                input.value = "";
+                return;
+            }
+            
+            if (myWords.includes(word)) {
+                showMessage("You already submitted this word!", "error");
+                input.value = "";
+                return;
+            }
+            
+            // Check if word exists across all players
+            if (allPlayerWords.has(word)) {
+                // Word was submitted by someone else - it's now invalid for everyone
+                const players = allPlayerWords.get(word);
+                showMessage(`"${word}" was already submitted and has been removed!`, "warning");
+                
+                // Remove from all players
+                allPlayerWords.delete(word);
+                
+                // Update display for all (in real multiplayer, this would sync)
+                updateAllWordsDisplay();
+                return;
+            }
+            
+            // Add the word
+            myWords.push(word);
+            allPlayerWords.set(word, new Set([currentPlayer]));
+            
+            // Update score
+            updateMyScore();
+            updateAllWordsDisplay();
+            
+            // Clear input
+            input.value = "";
+            input.focus();
+            
+            showMessage(`✓ "${word}" added! +${calculateScore(word)} points`, "success");
+        }
+        
+        function updateMyScore() {
+            let totalScore = 0;
+            myWords.forEach(word => {
+                totalScore += calculateScore(word);
+            });
+            document.getElementById('myScore').textContent = totalScore;
+            
+            // Update sheet in real-time
+            updateScoreInSheet(currentPlayer, totalScore);
+        }
+        
+        function updateDisplay() {
+            // Draw board
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            currentBoard.forEach(letter => {
+                const die = document.createElement('div');
+                die.className = 'dice';
+                die.textContent = letter;
+                boardDiv.appendChild(die);
+            });
+            
+            // Update my words
+            const myWordsDiv = document.getElementById('myWords');
+            myWordsDiv.innerHTML = '';
+            myWords.forEach(word => {
+                const tag = document.createElement('div');
+                tag.className = 'word-tag';
+                tag.textContent = `${word} (${calculateScore(word)} pts)`;
+                myWordsDiv.appendChild(tag);
+            });
+            
+            updateAllWordsDisplay();
+        }
+        
+        function updateAllWordsDisplay() {
+            const allWordsDiv = document.getElementById('allWords');
+            allWordsDiv.innerHTML = '';
+            
+            const allWordsArray = Array.from(allPlayerWords.keys());
+            allWordsArray.forEach(word => {
+                const tag = document.createElement('div');
+                tag.className = 'word-tag';
+                tag.textContent = word;
+                allWordsDiv.appendChild(tag);
+            });
+        }
+        
+        function endGame() {
+            gameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const finalScore = myWords.reduce((sum, word) => sum + calculateScore(word), 0);
+            showMessage(`Game Over! Your final score: ${finalScore}`, "info");
+            
+            document.getElementById('wordInput').disabled = true;
+            
+            // Final score update
+            updateScoreInSheet(currentPlayer, finalScore);
+        }
+        
+        function showMessage(msg, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = msg;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+        
+        async function login() {
+            const select = document.getElementById('playerSelect');
+            currentPlayer = select.value;
+            
+            if (!currentPlayer) {
+                alert("Please select your name!");
+                return;
+            }
+            
+            document.getElementById('playerInfo').textContent = `👤 ${currentPlayer}`;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            await loadSowpods();
+            startGame();
+        }
+        
+        // Initialize
+        loadPlayers();
+    </script>
+</body>
+</html>
